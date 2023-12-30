@@ -11,31 +11,47 @@ use App\Repository\PostRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpKernel\HttpCache\Store;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PostRepository::class)]
 #[ApiResource(
     operations: [
-        new Get(),
-        new GetCollection(),
+        new Get(
+            normalizationContext: ['groups' => ['read', 'read:item']],
+        ),
+        new GetCollection(
+            normalizationContext: ['groups' => ['read', 'read:collection']], //GET
+        ),
         new Patch(),
         new ApiPost()
-    ]
+    ],
+//    normalizationContext: ['groups' => ['read']], //GET
+    denormalizationContext: ['groups' => ['write']], //POST, PUT, PATCH
+    paginationItemsPerPage: 8,
 )]
 class Post
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['read', 'write'])]
+    #[Assert\NotBlank]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['read:item', 'write'])]
+    #[Assert\NotBlank]
     private ?string $body = null;
 
     #[ORM\ManyToOne(inversedBy: 'posts')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['read', 'write'])]
+    #[Assert\NotBlank]
     private ?Category $category = null;
 
     public function getId(): ?int
@@ -58,6 +74,16 @@ class Post
     public function getBody(): ?string
     {
         return $this->body;
+    }
+
+    #[Groups(['read:collection'])]
+    public function getSummary($len = 70): ?string
+    {
+        if (mb_strlen($this->body) <= $len) {
+            return $this->body;
+
+        }
+        return mb_substr($this->body, 0, 70) . '[...]';
     }
 
     public function setBody(string $body): static
