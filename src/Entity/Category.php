@@ -9,25 +9,42 @@ use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
 #[ApiResource(
+//    shortName: 'new-access',
+//    description: 'A short description of the resource.',
     operations: [
         new Get(),
         new GetCollection()
-    ]
+    ],
+//    routePrefix: 'prefix',
+    normalizationContext: ['groups' => ['category:read']],
 )]
 class Category
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['category:read', 'post:read'])]
+    /**
+     * Unique Identifier for one category
+     */
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['category:read', 'post:read'])]
+    /**
+     * Category Name
+     */
     private ?string $name = null;
 
     #[ORM\OneToMany(mappedBy: 'category', targetEntity: Post::class, orphanRemoval: true)]
+    #[Groups(['category:read'])]
+    /**
+     * Posts which belongs to the category, relation OneToMany
+     */
     private Collection $posts;
 
     public function __construct()

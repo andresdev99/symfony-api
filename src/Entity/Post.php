@@ -14,8 +14,13 @@ use Symfony\Component\HttpKernel\HttpCache\Store;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
+
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 #[ORM\Entity(repositoryClass: PostRepository::class)]
 #[ApiResource(
+    description: 'Post Entity with title, body and category',
     operations: [
         new Get(
             normalizationContext: ['groups' => ['read', 'read:item']],
@@ -30,6 +35,14 @@ use Symfony\Component\Validator\Constraints as Assert;
     denormalizationContext: ['groups' => ['write']], //POST, PUT, PATCH
     paginationItemsPerPage: 8,
 )]
+#[ApiFilter(SearchFilter::class, properties: [
+    'title' => 'partial',
+    'body' => 'partial',
+    'category.name' => 'partial'
+])]
+#[ApiFilter(OrderFilter::class, properties: [
+    'id'
+])]
 class Post
 {
     #[ORM\Id]
